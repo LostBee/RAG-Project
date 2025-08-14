@@ -19,7 +19,7 @@ The project is currently in **Phase 1**.
 
 ---
 
-## Roadmap / Future Phases
+## WIP / Future Phases
 
 * **Phase 2: Data Processing & Vectorization**
     * Split the loaded documents into smaller, semantically meaningful chunks.
