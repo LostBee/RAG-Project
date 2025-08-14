@@ -1,53 +1,64 @@
 # load_docs.py
 
-from langchain_community.document_loaders import GoogleDriveLoader
 import os
+from dotenv import load_dotenv
+from langchain_community.document_loaders import GoogleDriveLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+
+# ==DEBUGGING to solve encoding issue!!- Solved and I don't even know what was the issue but leaving the logs here in case needed ==
+print("--- Starting Debug ---")
+# 1. Print the current working directory
+print(f"Current Working Directory: {os.getcwd()}")
+
+# 2. Check if the .env file exists at the expected path
+env_path = os.path.join(os.getcwd(), '.env')
+print(f"Checking for .env file at: {env_path}")
+print(f"Does .env file exist? {os.path.exists(env_path)}")
+
+# 3. Load the .env file and check if it was successful
+load_success = load_dotenv()
+print(f"Did dotenv load successfully? {load_success}")
+
+# 4. Read the variable AFTER trying to load it
+DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
+print(f"Value of DRIVE_FOLDER_ID after loading: '{DRIVE_FOLDER_ID}'")
+print("--- End Debug ---\n")
+# =========================================================
+
 
 # --- Configuration ---
-DRIVE_FOLDER_ID = "1sSoTFq02iXSiqm_NGUoCYSOVqFx2NIJQ" 
+FAISS_INDEX_PATH = "faiss_index"
 
-# --- Main Execution ---
 def main():
-    """
-    Connects to Google Drive, loads documents from the specified folder,
-    and prints the number of documents loaded and the content of the first one.
-    """
-    #
-    # THIS IS THE LINE TO FIX. Change it back to check for the placeholder.
-    #
-    if DRIVE_FOLDER_ID == "YOUR_FOLDER_ID_HERE" or not DRIVE_FOLDER_ID:
-        print("ERROR: Please set the DRIVE_FOLDER_ID variable in the script.")
+    if not DRIVE_FOLDER_ID:
+        print("❌ Error: DRIVE_FOLDER_ID is still None. Halting execution.")
         return
 
-    print(f"Attempting to load documents from Google Drive folder: {DRIVE_FOLDER_ID}")
-
-    # Initialize the GoogleDriveLoader
+    print("🚀 Starting the document processing pipeline...")
+    # ... rest of the script is the same ...
+    print(f"Loading documents from Google Drive folder...")
     loader = GoogleDriveLoader(
         folder_id=DRIVE_FOLDER_ID,
-        credentials_path="credentials.json", #Pointing explicitly to the file to fix issues.
-        token_path="token.json" # Have to specify as it tried to save it in a folder in C drive which doesn't exit.
+        credentials_path="credentials.json",
+        token_path="token.json"
     )
+    docs = loader.load()
+    print(f"✅ Loaded {len(docs)} document(s).")
 
-    # Load documents
-    try:
-        docs = loader.load()
-        if not docs:
-            print("No documents found in the specified folder. Make sure the folder is not empty and the ID is correct.")
-            return
+    print("Splitting documents into chunks...")
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    chunks = text_splitter.split_documents(docs)
+    print(f"✅ Split documents into {len(chunks)} chunks.")
 
-        print(f"\n✅ Successfully loaded {len(docs)} document(s).")
-        print("\n--- Content of the first document: ---")
-        print(docs[0].page_content[:500])
-        print("\n--- Metadata of the first document: ---")
-        print(docs[0].metadata)
+    print("Creating vector embeddings and saving to FAISS index...")
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    vectorstore = FAISS.from_documents(chunks, embeddings)
+    vectorstore.save_local(FAISS_INDEX_PATH)
+    print(f"✅ Vector store created and saved at: {FAISS_INDEX_PATH}")
 
-    except Exception as e:
-        print(f"\n❌ An error occurred: {e}")
-        print("Please check the following:")
-        print("1. Is your DRIVE_FOLDER_ID correct?")
-        print("2. Is the 'credentials.json' file in the same directory as this script?")
-        print("3. Did you enable the Google Drive API in your Google Cloud project?")
-
+    print("\n🎉 Document processing pipeline completed successfully!")
 
 if __name__ == "__main__":
     main()
