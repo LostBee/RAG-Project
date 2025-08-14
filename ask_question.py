@@ -1,10 +1,8 @@
-# ask_question.py
-# Checkout this awesome playlist: https://www.youtube.com/watch?v=wd7TZ4w1mSw&list=PLfaIDFEXuae2LXbO1_PKyVJiQ23ZztA0x
-
+# ask_question.py (FAISS version)
 import os
 from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS # <-- Use FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import RetrievalQA
 
@@ -12,50 +10,38 @@ from langchain.chains import RetrievalQA
 FAISS_INDEX_PATH = "faiss_index"
 
 def main():
-    # Load API keys from .env file
     load_dotenv()
 
-    # Initialize Models
-    print("Initializing models...")
-    # Initialize the same embedding model used to create the vector store
+    print("Initializing models and loading FAISS index...")
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    # Initialize Gemini 2.5 Flash for generation
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
-    print("✅ Models initialized.")
-
-    # Load the Vector Store
-    print(f"Loading vector store from: {FAISS_INDEX_PATH}")
-    try:
-        vectorstore = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
-    except Exception as e:
-        print(f"❌ Error loading vector store: {e}")
-        print("   Please make sure you have run 'python load_docs.py' to create the index.")
-        return
-    print("✅ Vector store loaded.")
-
-    # Create the QA Chain
-    # A retriever is a component that fetches relevant documents from the vector store - checkout the youtube playlist on top
-    retriever = vectorstore.as_retriever()
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest", temperature=0)
     
-    # The RetrievalQA chain combines the retriever and the LLM
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff", # "stuff" means it "stuffs" all retrieved docs into the prompt
-        retriever=retriever
+    # Load the FAISS index
+    vectorstore = FAISS.load_local(
+        FAISS_INDEX_PATH, 
+        embeddings,
+        allow_dangerous_deserialization=True
     )
-    print("✅ QA chain created.")
-
-    # Ask a Question
-    print("\nReady to answer questions.")
-    query = "What is 2+2 based on the document?" # <-- CHANGE YOUR QUESTION HERE
     
-    print(f"\n❓ Query: {query}")
-    try:
-        response = qa_chain.invoke(query)
-        print("\n✅ Answer:")
-        print(response["result"])
-    except Exception as e:
-        print(f"❌ An error occurred: {e}")
+    retriever = vectorstore.as_retriever()
+    qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever)
+    print("✅ Initialization complete. You can now ask questions.")
+
+    # --- Interactive Loop ---
+    while True:
+        query = input("\nType your question (or 'quit' to exit): ")
+        if query.lower() == 'quit':
+            break
+        if not query.strip():
+            continue
+
+        try:
+            print("Thinking with Gemini...")
+            response = qa_chain.invoke(query)
+            print("\n✅ Answer:")
+            print(response["result"])
+        except Exception as e:
+            print(f"\n❌ An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
