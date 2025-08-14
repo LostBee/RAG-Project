@@ -1,0 +1,21 @@
+# Virtual Environment
+# This folder contains the Python interpreter and libraries, which can be large
+# and system-specific. It should be recreated using requirements.txt.
+venv/
+
+# Python Cache
+# These are temporary files created by Python during execution.
+__pycache__/
+*.pyc
+
+# Secrets & Credentials
+# IMPORTANT: These files contain sensitive API keys and user authentication tokens.
+# Never commit them to a public or private repository.
+credentials.json
+token.json
+*.env
+
+# OS-specific files
+# These are metadata files created by macOS and Windows.
+.DS_Store
+Thumbs.db
