@@ -1,4 +1,4 @@
-# utils.py (with hashing debug)
+# utils.py
 import os
 import hashlib
 import shutil
@@ -12,27 +12,20 @@ VECTOR_STORES_DIR = "vector_stores"
 def get_id_from_path(path_or_id):
     """Creates a short, safe, unique ID from a file path."""
     source_id = hashlib.md5(path_or_id.encode()).hexdigest()
-    # --- NEW DEBUG LINE ---
     print(f"--- DEBUG: Path='{path_or_id}'  -->  Hashed ID='{source_id}' ---")
     return source_id
 
-def process_documents(source_id, loader, force_refresh=False):
+def create_vector_store(source_id, loader):
     """
-    The main processing pipeline. Loads, chunks, embeds, and saves documents.
-    Set force_refresh to True to delete and rebuild an existing store.
+    Creates a new vector store from a loader, saves it, and returns it.
     """
     index_path = os.path.join(VECTOR_STORES_DIR, source_id)
-    
-    if os.path.exists(index_path):
-        if force_refresh:
-            print(f"Force refresh enabled. Deleting existing vector store at '{index_path}'...")
-            shutil.rmtree(index_path)
-        else:
-            print(f"✅ Vector store for source '{source_id}' already exists. Loading existing store.")
-            embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-            return FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
 
-    print(f"🚀 Starting the processing pipeline for source '{source_id}'...")
+    # Clean up old directory if it exists for a fresh start
+    if os.path.exists(index_path):
+        shutil.rmtree(index_path)
+    
+    print(f"🚀 Creating new vector store for source '{source_id}'...")
     docs = loader.load()
 
     if not docs:

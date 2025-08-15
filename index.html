@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Chat</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], textarea { width: 95%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        textarea { height: 80px; resize: vertical; }
+        button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:disabled { background-color: #aaa; }
+        #answer { margin-top: 20px; padding: 15px; background-color: #e9ecef; border-radius: 4px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RAG Document Chat</h1>
+        <form id="rag-form">
+            <div class="form-group">
+                <label>Data Source</label>
+                <input type="radio" id="drive" name="source_type" value="drive" checked>
+                <label for="drive">Google Drive</label>
+                <input type="radio" id="local" name="source_type" value="local">
+                <label for="local">Local Folder</label>
+            </div>
+            <div class="form-group">
+                <label for="path">Source Path / ID</label>
+                <input type="text" id="path" required placeholder="Enter Google Drive Folder ID or Local Path">
+            </div>
+            <div class="form-group">
+                <label for="question">Your Question</label>
+                <textarea id="question" required placeholder="Ask a question about your documents..."></textarea>
+            </div>
+            <button type="submit" id="submit-btn">Ask</button>
+        </form>
+        <div id="answer">Your answer will appear here...</div>
+    </div>
+
+    <script>
+        const form = document.getElementById('rag-form');
+        const answerDiv = document.getElementById('answer');
+        const submitBtn = document.getElementById('submit-btn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const sourceType = document.querySelector('input[name="source_type"]:checked').value;
+            const path = document.getElementById('path').value;
+            const question = document.getElementById('question').value;
+
+            // Show loading state
+            answerDiv.textContent = 'Processing and thinking...';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Thinking...';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source_type: sourceType,
+                        path: path,
+                        question: question
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    answerDiv.textContent = 'Error: ' + data.error;
+                } else {
+                    answerDiv.textContent = data.answer;
+                }
+            } catch (error) {
+                answerDiv.textContent = 'Failed to connect to the backend. Make sure the API server is running.';
+            } finally {
+                // Restore button state
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Ask';
+            }
+        });
+    </script>
+</body>
+</html>
