@@ -1,64 +1,65 @@
-# Google Drive RAG Chatbot
+# RAG Document Chatbot
 
-This project is a Python-based implementation of a Retrieval-Augmented Generation (RAG) system. The goal is to create a chatbot that can answer questions based on the content of documents stored in a specific Google Drive folder.
+This project is a Python-based implementation of a Retrieval-Augmented Generation (RAG) system. The goal is to create a chatbot that can answer questions based on the content of various document sources.
 
-The application uses the LangChain framework to orchestrate the connection to data sources (Google Drive), data processing, and interaction with a Large Language Model (LLM).
+The application is built with a separate backend API (using FastAPI and LangChain) and a frontend web interface (using HTML, CSS, and JavaScript), making it modular and extensible.
 
 ---
 
 ## Project Status
 
-**Completed for Terminal use case:** The application is fully functional and all core phases are complete.
+**Completed:** The project is a fully functional web application with a local backend API.
 
 ### Features
 
-* **Data Ingestion:** Securely loads documents from a specified Google Drive folder using the Google Drive API.
-* **Document Processing:** Automatically splits documents into smaller, semantically meaningful chunks for efficient processing.
-* **Embeddings:** Uses a free, high-performance Hugging Face model (`all-MiniLM-L6-v2`) to create vector embeddings locally, requiring no embedding API costs.
-* **Vector Storage:** Stores document embeddings in a persistent, local FAISS vector store for fast and efficient similarity searches.
-* **Generation:** Leverages Google's Gemini Pro Large Language Model to generate context-aware answers.
-* **Interactive CLI:** Provides a simple, interactive Command-Line Interface (CLI) for a continuous question-and-answer session.
-* **Secure Configuration:** Manages all API keys, tokens, and IDs securely using a `.env` file, keeping secrets out of the source code.
-* **Debugging & Tracing:** Integrated with LangSmith for full visibility and debugging of the RAG pipeline.
-
-**Future** A Local Web interface with possibility to easily change LLM api from the interface maybe if that doesn't add any big security risk. I will research
+* **Multiple Data Sources:** Ingest documents from a Google Drive folder, a local folder on your machine, or by direct file upload.
+* **Web Interface:** A clean, browser-based UI for selecting a data source, processing documents, and asking questions.
+* **Dynamic UI:** The interface dynamically adjusts to show the relevant inputs for the selected data source.
+* **Backend API:** Built with FastAPI, providing a robust endpoint that handles all RAG logic, including file uploads.
+* **Persistent Vector Storage:** Automatically creates and manages local vector stores for each data source using FAISS, allowing for quick re-use of processed knowledge bases.
+* **Local Embeddings:** Uses a free, high-performance Hugging Face model (`all-MiniLM-L6-v2`) to create vector embeddings locally.
+* **LLM Generation:** Leverages Google's Gemini Flash Large Language Model to generate context-aware answers.
+* **Secure Configuration:** Manages all API keys using a `.env` file, keeping secrets out of the code.
+* **File Upload Validation:** Limits direct file uploads to a maximum of 5 files for a better user experience.
 
 ---
 
-## How to Run the Application
+## Project Structure
 
-There is a two-step process to run the application.
+* `api.py`: The FastAPI backend server that contains all the API logic.
+* `index.html`: A single file containing the complete frontend UI, styling (CSS), and client-side logic (JavaScript).
+* `utils.py`: Shared helper functions used by the backend for processing documents and creating unique IDs.
+* `vector_stores/`: A directory that is automatically created to store the generated knowledge bases. This folder should be in your `.gitignore`.
+* `.env`: A file to store your secret API keys.
 
-### Step 1: Process Your Documents (Run Once)
+---
 
-First, you need to run the `load_docs.py` script. This will connect to your Google Drive, process all the documents, and save them into the local FAISS vector store.
+## Usage
+
+The application consists of a backend server and a frontend interface.
+
+### Step 1: Start the Backend Server
+
+Navigate to the project directory in your terminal (with the virtual environment activated) and run the following command to start the FastAPI server:
 
 ```bash
-python load_docs.py
+uvicorn api:app --reload
 ````
 
-*You only need to run this script once, or whenever you add, remove, or change the documents in your Google Drive folder.*
+Keep this terminal window open. You will see log output here as you use the application.
 
-### Step 2: Start the Chatbot
+### Step 2: Open the Web Interface
 
-Once your documents are processed, you can start the interactive chatbot.
-
-```bash
-python ask_question.py
-```
-
-This will load the local vector store and the models, then prompt you to ask questions.
+Simply find the `index.html` file in the project folder and open it in your web browser. Once loaded, you can choose your data source (Google Drive, Local Folder, or File Upload), provide the necessary path or files, and ask questions.
 
 -----
 
 ## Setup and Installation
 
-Follow these steps to set up and run the project locally.
-
 ### 1\. Prerequisites
 
   * Python 3.8+ installed.
-  * Access to a Google account and Google Drive.
+  * Access to a Google account.
 
 ### 2\. Clone the Repository
 
@@ -83,26 +84,24 @@ Install the required packages from the `requirements.txt` file.
 pip install -r requirements.txt
 ```
 
-*(Note: To create the `requirements.txt` file, run `pip freeze > requirements.txt` after installing all packages).*
+*(Note: To create or update the `requirements.txt` file, run `pip freeze > requirements.txt` after installing all packages).*
 
 ### 5\. Configuration and Credentials
 
-This project requires several credentials. Create a file named `.env` in the root of the project folder to store them.
+Create a file named `.env` in the root of the project folder to store your secrets.
 
-**1. Google Drive API (`credentials.json`)**
+**1. Google Drive API (`credentials.json`)** (Optional, if you use Google Drive)
 
   * Go to the [Google Cloud Console](https://console.cloud.google.com/) and create a new project.
   * Enable the **Google Drive API** for your project.
   * Create an **OAuth 2.0 Client ID** credential for a **Desktop app**.
   * Download the credentials JSON file and save it as `credentials.json` in the project folder.
-  * When you run the app for the first time, you will be prompted to authorize access, which will create a `token.json` file. Make sure `credentials.json` and `token.json` are listed in your `.gitignore` file.
 
 **2. Create `.env` File**
 Create a file named `.env` and add the following keys:
 
 ```env
-# For Google Drive and Gemini
-DRIVE_FOLDER_ID="YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE"
+# For Google Gemini API
 GOOGLE_API_KEY="YOUR_GOOGLE_AI_STUDIO_KEY_HERE"
 
 # For LangSmith Tracing (Optional, but recommended)
@@ -111,9 +110,7 @@ LANGCHAIN_API_KEY="YOUR_LANGSMITH_API_KEY_HERE"
 LANGCHAIN_PROJECT="My RAG Project"
 ```
 
-  * **`DRIVE_FOLDER_ID`**: Open the folder in Google Drive and copy the ID from the URL.
   * **`GOOGLE_API_KEY`**: Get this from [Google AI Studio](https://aistudio.google.com/app/apikey).
   * **`LANGCHAIN_API_KEY`**: Get this from the [LangSmith website](https://smith.langchain.com/).
 
 <!-- end list -->
-
