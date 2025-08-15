@@ -19,3 +19,8 @@ token.json
 # These are metadata files created by macOS and Windows.
 .DS_Store
 Thumbs.db
+
+# Generated Data & Indexes
+# This directory contains the processed vector stores.
+# It can be large and should be regenerated from the source documents.
+vector_stores/
