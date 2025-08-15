@@ -1,23 +1,32 @@
-# ask_question.py (Main Application)
+# ask_question.py (with smart initial check)
 import os
+import hashlib
 from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import RetrievalQA
 from langchain_community.document_loaders import GoogleDriveLoader, DirectoryLoader
-from langchain_community.vectorstores import FAISS
-from utils import get_id_from_path, process_documents # <-- Import from utils
+from utils import get_id_from_path, process_documents
 
 load_dotenv()
+
 VECTOR_STORES_DIR = "vector_stores"
 
 def main():
     vectorstore = None
     print("\n--- RAG Document Chat ---")
     
-    # NEW: Main user workflow
-    use_existing = input("Have you previously processed the files you want to chat with? (yes/no): ").lower()
+    use_existing = ""
     
+    # --- NEW: Check if any vector stores exist before asking the user ---
+    if not os.path.isdir(VECTOR_STORES_DIR) or not os.listdir(VECTOR_STORES_DIR):
+        print("No existing knowledge bases found. Let's create one.")
+        use_existing = "no" # Force the 'no' path
+    else:
+        use_existing = input("Have you previously processed the files you want to chat with? (yes/no): ").lower()
+    # --- END NEW LOGIC ---
+
     print("\nSelect a data source:")
     print("1. Google Drive Folder")
     print("2. Local Folder")
@@ -52,7 +61,7 @@ def main():
             if create_new == 'yes':
                 vectorstore = process_documents(source_id, loader)
     elif use_existing == 'no':
-        print("Forcing a refresh of the knowledge base.")
+        print("Starting the process to create or refresh the knowledge base.")
         vectorstore = process_documents(source_id, loader, force_refresh=True)
 
     if not vectorstore:
